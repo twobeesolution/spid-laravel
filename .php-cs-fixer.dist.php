@@ -25,6 +25,11 @@ $rules = [
     'ordered_imports' => true,
     'phpdoc_align' => ['align' => 'left'],
     'phpdoc_order' => true,
+    'global_namespace_import' => [
+        'import_classes' => true, 
+        'import_constants' => false, 
+        'import_functions' => false,
+    ],
 ];
 
 $finder = Finder::create()
@@ -36,7 +41,7 @@ $finder = Finder::create()
     ->ignoreVCS(true)
     ->in(__DIR__);
 
-return Config::create()
+return (new Config())
     ->setRules($rules)
     ->setFinder($finder)
     ->setUsingCache(true);

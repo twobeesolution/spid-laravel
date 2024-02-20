@@ -116,7 +116,7 @@ class SPIDAuth extends Controller
 
         try {
             $this->getSAML($idp)->processResponse($lastRequestId);
-        } catch (SAMLError | SAMLValidationError $e) {
+        } catch (SAMLError|SAMLValidationError $e) {
             throw new SPIDLoginException('SAML response validation error: ' . $e->getMessage(), SPIDLoginException::SAML_VALIDATION_ERROR, $e);
         }
 
@@ -225,7 +225,7 @@ class SPIDAuth extends Controller
 
             try {
                 $this->getSAML($idp)->processSLO();
-            } catch (SAMLError | SAMLValidationError $e) {
+            } catch (SAMLError|SAMLValidationError $e) {
                 throw new SPIDLogoutException('SAML response validation error: ' . $e->getMessage(), SPIDLogoutException::SAML_VALIDATION_ERROR, $e);
             }
 
@@ -266,7 +266,8 @@ class SPIDAuth extends Controller
         }
 
         try {
-            $metadata = $this->getSAML(null)->getSettings()->getSPMetadata();
+            $settings = $this->getSAML(null)->getSettings();
+            $metadata = $settings->getSPMetadata();
 
             if (!$metadata) {
                 throw new RuntimeException('error');
@@ -343,7 +344,15 @@ class SPIDAuth extends Controller
                 $root->appendChild($cp);
             }
 
+            $oldSign = $document->getElementsByTagName('Signature');
+            foreach ($oldSign as $old) {
+                $old->parentNode->removeChild($old);
+            }
+
+            $key = $settings->getSPkey();
+            $cert = $settings->getSPcert();
             $metadata = $document->saveXML();
+            $metadata = SAMLUtils::addSign($metadata, $key, $cert);
         } catch (Exception $e) {
             throw new SPIDMetadataException('Invalid SP metadata: ' . $e->getMessage(), 0, $e);
         }
@@ -760,6 +769,7 @@ class SPIDAuth extends Controller
      * Return a random string.
      *
      * @return string random string
+     *
      * @codeCoverageIgnore
      */
     protected function getRandomString(): string
